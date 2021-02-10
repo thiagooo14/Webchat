@@ -16,7 +16,6 @@ let sockets = [];
 const obj = {};
 
 io.on('connection', async (socket) => {
-  console.log('Conectado');
   io.emit('userList', sockets);
 
   const allMessages = await messageModel.getAll();
@@ -27,7 +26,6 @@ io.on('connection', async (socket) => {
       obj.user = nickname;
       sockets.unshift(obj.user);
       sockets = sockets.filter((este, i) => sockets.indexOf(este) === i);
-      console.log(sockets);
 
       io.emit('userList', sockets);
     }

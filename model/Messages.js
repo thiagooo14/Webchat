@@ -12,10 +12,9 @@ const changeValues = async (nickname, message) => {
 
   const hour = hoursWithoutZeroes(d);
   const minutes = d.getMinutes();
-  const seconds = d.getSeconds();
   const sigla = d.getHours() > 12 ? 'PM' : 'AM';
 
-  const date = `${day}-${month}-${year} ${hour}:${minutes}:${seconds} ${sigla}`;
+  const date = `${day}-${month}-${year} ${hour}:${minutes} ${sigla}`;
 
   const data = await connection().then((db) =>
     db.collection('messages').insertOne({ nickname, message, date }));
