@@ -1,54 +1,63 @@
 const express = require('express');
+const http = require('http');
 const path = require('path');
-
-const app = require('express')();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const socketIo = require('socket.io');
+const moment = require('moment');
 const cors = require('cors');
+const { createMessage, getAllMessages } = require('./model/Messages');
 
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 const PORT = 3000;
 
-const messageModel = require('./model/Messages');
-
+// app.use(express.static(path.join(__dirname, 'public')));
+// app.set('views', path.join(__dirname, 'public'));
 app.use(cors());
+
 app.use('/', express.static(path.join(__dirname, 'public')));
 
-let sockets = [];
-const obj = {};
-
 io.on('connection', async (socket) => {
-  io.emit('userList', sockets);
+  const messagesHistoric = await getAllMessages();
 
-  const allMessages = await messageModel.getAll();
-  io.emit('history', allMessages);
-
-  const dispatch = (nickname) => {
-    if (!obj.user || !obj.user.includes(nickname)) {
-      obj.user = nickname;
-      sockets.unshift(obj.user);
-      sockets = sockets.filter((este, i) => sockets.indexOf(este) === i);
-
-      io.emit('userList', sockets);
-    }
-  };
-
-  socket.on('newNick', async ({ nickname }) => {
-    await dispatch(nickname);
+  messagesHistoric.forEach(({ chatMessage, nickname, timestamp }) => {
+    const fullMessage = `${timestamp} - ${nickname}: ${chatMessage}`;
+    socket.emit('history', fullMessage);
   });
 
-  socket.on('message', async ({ nickname, chatMessage }) => {
-    await dispatch(nickname);
+  socket.on('message', async ({ chatMessage, nickname }) => {
+    const time = new Date();
+    const timestamp = moment(time).format('DD-MM-yyyy HH:mm:ss');
+    await createMessage(chatMessage, nickname, timestamp);
+    const fullMessage = `${timestamp} - ${nickname}: ${chatMessage}`;
 
-    const message = await messageModel.changeValues(nickname, chatMessage);
+    io.emit('message', fullMessage);
+  });
 
-    io.emit('message', `${message.date} ${message.nickname}: ${message.message}`);
+  socket.on('changeNickname', ({ newNickname }) => {
+    io.emit('changeNickname', newNickname);
+  });
+
+  let usersList = [];
+
+  socket.on('logged-users', ({ nickname }) => {
+    usersList.push({ socketId: socket.id, nickname });
+    io.emit('online-users', usersList);
+  });
+
+  socket.on('changeNickname', ({ newNickname }) => {
+    usersList.filter(({ nickname }) => nickname !== newNickname);
+    usersList.push({ socketId: socket.id, nickname: newNickname });
+    io.emit('online-users', usersList);
   });
 
   socket.on('disconnect', () => {
-    sockets.splice(obj.user);
-    io.emit('userList', sockets);
+    usersList.filter(({ socketId }) => socketId !== socket.id);
+    usersList = [];
+    io.emit('online-users', usersList);
   });
 });
-http.listen(PORT, () => {
-  console.log(`Escutando a porta ${PORT}`);
+
+server.listen(PORT, () => {
+  console.log(`Lintening on ${PORT}`);
 });

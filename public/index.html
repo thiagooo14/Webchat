@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
   <head>
     <script src="/socket.io/socket.io.js"></script>
@@ -13,75 +14,72 @@
         <!-- <div> -->
           <input id="nickInput" class="nickInput" data-testid="nickname-box" type="text" />
           <button id="changeNick" class="changeNick" data-testid="nickname-save">Nick</button>
-        <!-- </div> -->
+          <!-- </div> -->
 
-        <div id="listMessages" class="messages"></div>
-        <!-- <div> -->
-          <input id="textInput" class="textInput" data-testid="message-box" autocomplete="off" />
-          <button id="sendMessage" class="sendMessage" data-testid="send-button">Send</button>
-        <!-- </div>  -->
-      </form>
-      <ul id="conectedUsers" class="conectedUsers"></ul>
+          <div id="listMessages" class="messages"></div>
+          <!-- <div> -->
+            <input id="textInput" class="textInput" data-testid="message-box" autocomplete="off" />
+            <button id="sendMessage" class="sendMessage" data-testid="send-button">Send</button>
+            <!-- </div>  -->
+          </form>
+          <ul id="conectedUsers" class="conectedUsers"></ul>
     </div>
 
-    <script>
+  <script>
+    window.onload = () => {
       const socket = io();
 
-      const user = document.querySelector('#userName');
+      const sendButton = document.getElementById('sendMessage');
+      const messageInput = document.getElementById('textInput');
+      const messagesList = document.getElementById('listMessages');
+      const nicknameSave = document.getElementById('changeNick');
+      const nicknameInput = document.getElementById('nicknInput');
+      const name = document.getElementById('userName');
+      const usersList = document.getElementById('conectedUsers');
 
-      const chatMessageInput = document.querySelector('#textInput');
-      const nicknameInput = document.querySelector('#nickInput');
+      const userNickname = chance.name();
+      name.innerText = userNickname;
 
-      const nickBtn = document.querySelector('#changeNick');
-      const msgBtn = document.querySelector('#sendMessage');
+      sendButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        const nickname = name.innerText;
+        socket.emit('message', { chatMessage: messageInput.value, nickname: nickname });
+        messageInput.value = '';
+      });
 
-      const onlineUsers = document.querySelector('#conectedUsers');
-      const messages = document.querySelector('#listMessages');
+      nicknameSave.addEventListener('click', (e) => {
+        e.preventDefault();
+        const newNickname = nicknameInput.value;
+        name.textContent = newNickname;
+        socket.emit('changeNickname', { newNickname });
+        userNickname = newNickname;
+        nicknameInput.value = '';
+      });
 
-      window.onload = () => {
-        user.innerText = chance.first();
-        let nickname = user.innerText;
+      socket.on('history', (fullMessage) => {
+        const li = document.createElement('li');
+        li.setAttribute('data-testid', 'message');
+        li.textContent = fullMessage;
+        messagesList.appendChild(li);
+      });
 
-        socket.emit('newNick', { nickname });
+      socket.on('message', (fullMessage) => {
+        const li = document.createElement('li');
+        li.setAttribute('data-testid', 'message');
+        li.textContent = fullMessage;
+        messagesList.appendChild(li);
+      });
 
-        nickBtn.addEventListener('click', (event) => {
-          event.preventDefault();
-          nickname = nicknameInput.value;
-          user.innerText = nickname;
-
-          socket.emit('newNick', { nickname });
-        });
-
-        msgBtn.addEventListener('click', (event) => {
-          event.preventDefault();
-          let chatMessage = chatMessageInput.value;
-
-          socket.emit('message', { nickname, chatMessage });
-        });
-
-        socket.on('userList', async (data) => {
-          onlineUsers.innerHTML = await data
-            .map(
-              (users) => `<li data-testid="online-user">${users}</li>
-            ${users === nickname ? '' : ''}`,
-            )
-            .join(' ');
-        });
-
-        socket.on('history', (data) => {
-          messages.innerHTML = data
-            .map((mes) => `<li data-testid="message">${mes.message}</li>`)
-            .join('');
-        });
-
-        socket.on('message', (data) => {
+      socket.on('online-users', (messages) => {
+        messages.forEach((message) => {
           const li = document.createElement('li');
-          li.setAttribute('data-testid', 'message');
-          li.textContent = data;
-
-          messages.appendChild(li);
+          li.setAttribute('data-testid', 'online-user');
+          li.textContent = message.nickname;
+          usersList.appendChild(li);
         });
-      };
-    </script>
-  </body>
+      });
+
+      socket.emit('logged-users', { nickname: userNickname });
+
+  </script>
 </html>
