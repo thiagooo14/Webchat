@@ -1,32 +1,27 @@
 <html>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-  <script src="http://chancejs.com/chance.min.js"></script>
   <head>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="http://chancejs.com/chance.min.js"></script>
     <link rel="stylesheet" href="style.css" />
-    <title>Web Chat Project</title>
+    <title>Trybe Live Messanget</title>
   </head>
   <body>
     <div class="main-page">
-      <div class="user">
+      <form id="chat">
         <h1 id="userName"></h1>
+        <!-- <div> -->
+          <input id="nickInput" class="nickInput" data-testid="nickname-box" type="text" />
+          <button id="changeNick" class="changeNick" data-testid="nickname-save">Nick</button>
+        <!-- </div> -->
 
-        <input id="nickInput" class="nickInput" data-testid="nickname-box" type="text" />
-        <button id="changeNick" class="changeNick" data-testid="nickname-save">Nick</button>
-      </div>
-      
-      <div class="menssages">
-        <ul id="listMessages" class="listMessages"></ul>
-      </div>
-
-      <div class="loged">
-        <ul id="conectedUsers" class="conectedUsers"></ul>
-      </div>
-
-      <div class="mensage">
-        <input id="textInput" class="textInput" data-testid="message-box" autocomplete="off" />
-        <button id="sendMessage" class="sendMessage" data-testid="send-button">Send</button>
-      </div>
+        <div id="listMessages" class="messages"></div>
+        <!-- <div> -->
+          <input id="textInput" class="textInput" data-testid="message-box" autocomplete="off" />
+          <button id="sendMessage" class="sendMessage" data-testid="send-button">Send</button>
+        <!-- </div>  -->
+      </form>
+      <ul id="conectedUsers" class="conectedUsers"></ul>
     </div>
 
     <script>
